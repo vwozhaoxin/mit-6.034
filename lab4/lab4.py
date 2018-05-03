@@ -17,7 +17,20 @@ def forward_checking(state, verbose=False):
 
     # Add your forward checking logic here.
     
-    raise NotImplementedError
+#    raise NotImplementedError
+    X= state.get_current_variable()
+    x= None
+    if X is not None:
+        x= X.get_assigned_value()
+    constants =state.get_constraints_by_name(state.get_current_variable_name())
+    for constant in constants:
+        Y= state.get_variable_by_name(constant.get_variable_j_name())
+        for y in Y.copy().get_domain():
+            if not constant.check(state, value_i=x, value_j=y):
+                Y.reduce_domain(y)
+        if Y.domain_size()==0:
+            return False
+    return True
 
 # Now Implement forward checking + (constraint) propagation through
 # singleton domains.
@@ -26,9 +39,30 @@ def forward_checking_prop_singleton(state, verbose=False):
     fc_checker = forward_checking(state, verbose)
     if not fc_checker:
         return False
-
+    
     # Add your propagate singleton logic here.
-    raise NotImplementedError
+#    raise NotImplementedError
+    var = [v for v in state.get_all_variables() if v.domain_size()==1]
+    var_not_single =[v for v in state.get_all_variables() if v.domain_size()!=1]
+    queue = var
+    visited =[]
+    while len(queue)>0:
+        X=queue.pop(0)
+        visited.append(X)
+        constants =state.get_constraints_by_name(X.get_name())
+        for constant in constants:
+            Y= state.get_variable_by_name(constant.get_variable_j_name())
+            for y in Y.copy().get_domain():
+                if not constant.check(state, value_i=X.get_domain()[0], value_j=y):
+                    Y.reduce_domain(y)
+                if Y.domain_size()==0:
+                    return False
+        for v in var_not_single:
+            if v.domain_size()==1:
+                var_not_single.remove(v)
+                if v not in (var or visited):
+                    queue.append(v)                            
+    return True
 
 ## The code here are for the tester
 ## Do not change.
@@ -70,28 +104,54 @@ senate_group1, senate_group2 = crosscheck_groups(senate_people)
 
 def euclidean_distance(list1, list2):
     # this is not the right solution!
-    return hamming_distance(list1, list2)
+#    dist =0 
+    result =[]
+    for i,j in zip(list1,list2):
+        result.append((i-j)**2)
+    dist = math.sqrt(math.fsum(result))
+    return dist
 
 #Once you have implemented euclidean_distance, you can check the results:
-#evaluate(nearest_neighbors(euclidean_distance, 1), senate_group1, senate_group2)
+#evaluate(nearest_neighbors(euclidean_distance, 1), senate_group1, senate_group2,verbose=1)
 
 ## By changing the parameters you used, you can get a classifier factory that
 ## deals better with independents. Make a classifier that makes at most 3
 ## errors on the Senate.
 
-my_classifier = nearest_neighbors(hamming_distance, 1)
+my_classifier = nearest_neighbors(euclidean_distance, 1)
 #evaluate(my_classifier, senate_group1, senate_group2, verbose=1)
 
 ### Part 2: ID Trees
-#print CongressIDTree(senate_people, senate_votes, homogeneous_disorder)
+#print (CongressIDTree(senate_people, senate_votes, homogeneous_disorder))
 
 ## Now write an information_disorder function to replace homogeneous_disorder,
 ## which should lead to simpler trees.
 
 def information_disorder(yes, no):
-    return homogeneous_disorder(yes, no)
+#    return homogeneous_disorder(yes, no)
+    disorder=0
+    na= len(yes)
+    nb = len(no)
+    total = na+nb
+    score ={}
+    score1={}
+    for i in yes:
+        if i not in score:
+            score[i] =1
+        else:
+            score[i]+=1
+    for v in score.values():
+        disorder += -na/total*(v/na)*math.log2(v/na)
+    for i in no:
+        if i not in score1:
+            score1[i] =1
+        else:
+            score1[i]+=1
+    for v in score1.values():
+        disorder += -nb/total*(v/nb)*math.log2(v/nb)
+    return disorder
 
-#print CongressIDTree(senate_people, senate_votes, information_disorder)
+#print (CongressIDTree(senate_people, senate_votes, information_disorder))
 #evaluate(idtree_maker(senate_votes, homogeneous_disorder), senate_group1, senate_group2)
 
 ## Now try it on the House of Representatives. However, do it over a data set
@@ -104,14 +164,14 @@ def limited_house_classifier(house_people, house_votes, n, verbose = False):
     house_limited_group1, house_limited_group2 = crosscheck_groups(house_limited)
 
     if verbose:
-        print "ID tree for first group:"
-        print CongressIDTree(house_limited_group1, house_limited_votes,
-                             information_disorder)
-        print
-        print "ID tree for second group:"
-        print CongressIDTree(house_limited_group2, house_limited_votes,
-                             information_disorder)
-        print
+        print ("ID tree for first group:")
+        print (CongressIDTree(house_limited_group1, house_limited_votes,
+                             information_disorder))
+#        print
+        print ("ID tree for second group:")
+        print (CongressIDTree(house_limited_group2, house_limited_votes,
+                             information_disorder))
+#        print
         
     return evaluate(idtree_maker(house_limited_votes, information_disorder),
                     house_limited_group1, house_limited_group2)
@@ -119,22 +179,22 @@ def limited_house_classifier(house_people, house_votes, n, verbose = False):
                                    
 ## Find a value of n that classifies at least 430 representatives correctly.
 ## Hint: It's not 10.
-N_1 = 10
+N_1 = 45
 rep_classified = limited_house_classifier(house_people, house_votes, N_1)
 
 ## Find a value of n that classifies at least 90 senators correctly.
-N_2 = 10
+N_2 = 70
 senator_classified = limited_house_classifier(senate_people, senate_votes, N_2)
 
 ## Now, find a value of n that classifies at least 95 of last year's senators correctly.
-N_3 = 10
+N_3 = 25
 old_senator_classified = limited_house_classifier(last_senate_people, last_senate_votes, N_3)
 
 
 ## The standard survey questions.
-HOW_MANY_HOURS_THIS_PSET_TOOK = ""
-WHAT_I_FOUND_INTERESTING = ""
-WHAT_I_FOUND_BORING = ""
+HOW_MANY_HOURS_THIS_PSET_TOOK = "3"
+WHAT_I_FOUND_INTERESTING = "yes"
+WHAT_I_FOUND_BORING = "no"
 
 
 ## This function is used by the tester, please don't modify it!
@@ -144,6 +204,6 @@ def eval_test(eval_fn, group1, group2, verbose = 0):
     if eval_fn in [ 'my_classifier' ]:
         return evaluate(globals()[eval_fn], group1, group2, verbose)
     else:
-        raise Exception, "Error: Tester tried to use an invalid evaluation function: '%s'" % eval_fn
+        raise Exception ("Error: Tester tried to use an invalid evaluation function: '%s'" % eval_fn)
 
     

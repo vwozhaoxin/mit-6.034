@@ -213,8 +213,14 @@ def better_evaluate(board):
         other_player = board.get_other_player_id()
         for row in range(4):
             for col in range(2,5):
-                score += max([get_chain_len(i, board, row, col, current_player) for i in range(4)])**2
-                score -= max([get_chain_len(i, board, row, col, other_player) for i in range(4)])**2
+                score += max([get_chain_len(i, board, row, col, current_player) for i in range(5)])**2
+                score -= max([get_chain_len(i, board, row, col, other_player) for i in range(5)])**2
+            for col in range(1,2):
+                score += max([get_chain_len(i, board, row, col, current_player) for i in range(3)])**2
+                score -= max([get_chain_len(i, board, row, col, other_player) for i in range(3)])**2
+            for col in range(5,7):
+                score += max([get_chain_len(i, board, row, col, current_player) for i in [1,3,4]])**2
+                score -= max([get_chain_len(i, board, row, col, other_player) for i in [1,3,4]])**2
     return score
 
 def get_chain_len(chain_type, board, row, col, player):
@@ -226,8 +232,12 @@ def get_chain_len(chain_type, board, row, col, player):
             count += 1
         elif chain_type == 2 and board.get_cell(row+i, col+i) == player:
             count += 1
-        elif chain_type == 3 and board.get_cell(row-i, col-i) == player:
+        elif chain_type == 3 and board.get_cell(row+i, col-i) == player:
             count += 1
+        elif chain_type == 4 and board.get_cell(row, col-i) == player:
+            count += 1
+#        elif chain_type == 5 and board.get_cell(row, col-i) == player:
+#            count += 1
             
     return count
 
@@ -264,15 +274,15 @@ your_player = lambda board: run_search_function(board,
                                                 eval_fn=better_evaluate,
                                                 timeout=5)
 
-#your_player = lambda board: alpha_beta_search(board, depth=4,
-#                                              eval_fn=better_evaluate)
+your_player = lambda board: alpha_beta_search(board, depth=4,
+                                              eval_fn=better_evaluate)
 
 ## Uncomment to watch your player play a game:
 #run_game(your_player, your_player)
 
 ## Uncomment this (or run it in the command window) to see how you do
 ## on the tournament that will be graded.
-#run_game(your_player, basic_player)
+run_game( human_player,your_player)
 
 ## These three functions are used by the tester; please don't modify them!
 def run_test_game(player1, player2, board):
