@@ -1,8 +1,9 @@
-from sets import Set as set
+#from sets import Set as set
 from data_reader import *
 import math
 import orange_for_6034
-import orange
+import Orange
+import Orange.classification
 
 class Classifier():
     """
@@ -253,7 +254,7 @@ class BoostClassifier(Classifier):
         self.renormalize_weights()
         best_classifier, best_error = self.best_classifier()
         if verbose:
-            print "[error=%4.4f]" % best_error, best_classifier
+            print ("[error=%4.4f]" % best_error, best_classifier)
         self.update_weights(best_error, best_classifier)
         self.classifiers.append((best_classifier, error_to_alpha(best_error)))
 
@@ -313,11 +314,11 @@ class OrangeWrapperClassifier(Classifier):
 #>
 #< BoostOrangeClassifier
 
-class BoostOrangeClassifier(orange.Classifier):
+class BoostOrangeClassifier(Orange.classification.logistic_regression.LogisticRegressionClassifier):
     def __init__(self, domain, classifier):
         self.classVar = domain.classVar
         self.classifier = classifier
-    def __call__(self, example, what = orange.Classifier.GetValue):
+    def __call__(self, example, what = Orange.classification.logistic_regression.LogisticRegressionClassifier.Value):
         probability = self.classifier.orange_classify(example)
 
         answer = orange.Value(self.classVar, int(round(probability)))
@@ -335,7 +336,7 @@ class BoostOrangeClassifier(orange.Classifier):
 #>
 #< BoostOrangeLearner
 
-class BoostOrangeLearner(orange.Learner):
+class BoostOrangeLearner(Orange.base.Learner):
     # the BoostClassifier above is already a Learner in the Orange sense,
     # because Orange separates the training (Learner) from the classification,
     # but the BoostClassifier combines them.

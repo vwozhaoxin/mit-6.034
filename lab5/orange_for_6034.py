@@ -17,12 +17,12 @@ if "orange" not in os.environ["LD_LIBRARY_PATH"]:
                                      ":"+os.environ['LD_LIBRARY_PATH'])
 
 #try:
-import orange
-import orngTree
-import orngTest
-import orngStat
-import orngEnsemble
-print "Orange version:",orange.version
+import Orange
+import Orange.widgets.evaluate.owconfusionmatrix
+#import OrngTest
+#import OrngStat
+#import OrngEnsemble
+print ("Orange version:",Orange.version)
 #except ImportError:
 #    raise "Did not find the Orange framework.  http://www.ailab.si/orange/"
 
@@ -40,7 +40,7 @@ def funcToMethod(func,clas,method_name=None):
 def cmstr(self):
     return ("<cm TruPos:%d FlsNeg:%d FlsPos:%d TruNeg:%d>" %
             (self.TP, self.FN, self.FP, self.TN))
-funcToMethod(cmstr,orngStat.ConfusionMatrix,"__str__")
+funcToMethod(cmstr,Orange.widgets.evaluate.owconfusionmatrix.confusion_matrix,"__str__")
 
 def bill_identifier(bill_data):
     text = bill_data['number']
@@ -56,17 +56,17 @@ def write_congress_data(legislators, filename,
         if len(descriptions) != len(legislators[0]['votes']):
             print ("%s: %d != %d" %
                    (filename, len(descriptions), len(legislators[0]['votes'])))
-            print descriptions[0]
-        print >>f, "party\t" + "\t".join([bill_identifier(v)
-                                          for v in descriptions])
+            print (descriptions[0])
+        f.write( "party\t" + "\t".join([bill_identifier(v)
+                                          for v in descriptions]))
     else:
-        print >>f, "party\t" + "\t".join(map(str,xrange(num_votes)))
-    print >>f, "\t".join(["discrete" for i in xrange(num_votes+1)])
-    print >>f, "\t".join(["" for i in xrange(-1, unknown_column)]),
-    print >>f, "class\t",
-    print >>f, "\t".join(["" for i in xrange(unknown_column+1, num_votes)])
+        f.write( "party\t" + "\t".join(map(str,range(num_votes))))
+    f.write("\t".join(["discrete" for i in range(num_votes+1)]))
+    f.write( "\t".join(["" for i in range(-1, unknown_column)]))
+    f.write("class\t")
+    f.write("\t".join(["" for i in range(unknown_column+1, num_votes)]))
     for legislator in legislators:
-        print >>f, legislator['party'] + "\t" + "\t".join(map(str,legislator['votes']))
+        f.write( legislator['party'] + "\t" + "\t".join(map(str,legislator['votes'])))
 
 
 if __name__ == "__main__":
